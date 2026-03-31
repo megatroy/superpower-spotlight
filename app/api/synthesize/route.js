@@ -1,0 +1,72 @@
+import { getRoom, getSuperpowersForPlayer, updateRoom } from "@/lib/store";
+import { buildSynthesisPrompt } from "@/lib/prompts";
+import { NextResponse } from "next/server";
+
+export async function POST(req) {
+  const { code } = await req.json();
+  const room = await getRoom(code);
+  if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
+
+  // Set synthesizing phase
+  await updateRoom(code, (r) => { r.phase = "synthesizing"; });
+
+  const synthesis = {};
+
+  for (const player of room.players) {
+    const powers = getSuperpowersForPlayer(room, player.name);
+    if (powers.length === 0) {
+      synthesis[player.name] = {
+        haiku: "A quiet mystery\nNo words yet given to share\nPotential awaits",
+        horoscope: {
+          reading: "The stars sense untapped potential. Q2 holds surprises for those who listen.",
+          lucky_color: "invisible indigo",
+          lucky_item: "an unopened envelope",
+          lucky_food: "a fortune cookie with a blank fortune",
+        },
+      };
+      continue;
+    }
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: buildSynthesisPrompt(player.name, powers) }],
+        }),
+      });
+
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      synthesis[player.name] = JSON.parse(clean);
+    } catch (err) {
+      console.error(`Synthesis failed for ${player.name}:`, err);
+      synthesis[player.name] = {
+        haiku: "Cosmic static hums\nThe oracle needs a nap\nTry again later",
+        horoscope: {
+          reading: "The stars are buffering. Your Q2 is too powerful to summarize.",
+          lucky_color: "error-message red",
+          lucky_item: "a rubber duck for debugging",
+          lucky_food: "cold pizza at 2am",
+        },
+      };
+    }
+  }
+
+  // Write everything in one atomic update
+  await updateRoom(code, (r) => {
+    r.synthesis = synthesis;
+    r.phase = "guess";
+    r.revealIndex = 0;
+    r.revealShowAnswer = false;
+  });
+
+  return NextResponse.json({ ok: true });
+}
