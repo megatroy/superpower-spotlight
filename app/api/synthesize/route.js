@@ -12,7 +12,9 @@ export async function POST(req) {
 
   const synthesis = {};
 
-  for (const player of room.players) {
+  for (let i = 0; i < room.players.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 1000));
+    const player = room.players[i];
     const powers = getSuperpowersForPlayer(room, player.name);
     if (powers.length === 0) {
       synthesis[player.name] = {
