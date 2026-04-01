@@ -23,6 +23,7 @@ export async function POST(req) {
           lucky_item: "an unopened envelope",
           lucky_food: "a fortune cookie with a blank fortune",
         },
+        rawPowers: [],
       };
       continue;
     }
@@ -43,11 +44,19 @@ export async function POST(req) {
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        console.error(`Claude API error for ${player.name}: ${res.status}`, JSON.stringify(data));
+        throw new Error(`API ${res.status}: ${data.error?.message || "Unknown error"}`);
+      }
+
       const text = data.content?.[0]?.text || "";
       const clean = text.replace(/```json|```/g, "").trim();
-      synthesis[player.name] = JSON.parse(clean);
+      const parsed = JSON.parse(clean);
+      parsed.rawPowers = powers;
+      synthesis[player.name] = parsed;
     } catch (err) {
-      console.error(`Synthesis failed for ${player.name}:`, err);
+      console.error(`Synthesis failed for ${player.name}:`, err.message || err);
       synthesis[player.name] = {
         haiku: "Cosmic static hums\nThe oracle needs a nap\nTry again later",
         horoscope: {
@@ -56,6 +65,7 @@ export async function POST(req) {
           lucky_item: "a rubber duck for debugging",
           lucky_food: "cold pizza at 2am",
         },
+        rawPowers: powers,
       };
     }
   }

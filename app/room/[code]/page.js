@@ -304,6 +304,7 @@ function GuessPhase({ room, isFacilitator, onAdvance }) {
               </div>
             </div>
           </div>
+          <RawNotes powers={synth.rawPowers} />
         </>
       )}
       {isFacilitator && (
@@ -347,6 +348,23 @@ function ReportCard({ name, data }) {
           </div>
         </div>
       </div>
+      <RawNotes powers={data.rawPowers} />
+    </div>
+  );
+}
+
+function RawNotes({ powers }) {
+  if (!powers || powers.length === 0) return null;
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(240, 192, 64, 0.2)" }}>
+      <h3 style={{ fontSize: "1.2rem", marginBottom: 8 }}>Raw Notes</h3>
+      <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+        {powers.map((p, i) => (
+          <li key={i} className="power-tag" style={{ display: "block", textAlign: "left" }}>
+            &ldquo;{p}&rdquo;
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
