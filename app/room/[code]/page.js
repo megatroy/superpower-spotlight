@@ -4,6 +4,17 @@ import { useParams } from "next/navigation";
 
 const PHASES = ["lobby", "submit", "synthesizing", "guess", "report"];
 
+function shuffle(arr, seed) {
+  const copy = [...arr];
+  let s = seed;
+  for (let i = copy.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = s % (i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export default function RoomPage() {
   const { code } = useParams();
   const [room, setRoom] = useState(null);
@@ -117,7 +128,8 @@ export default function RoomPage() {
 
   const phaseIdx = PHASES.indexOf(room.phase);
   const isFacilitator = room.isFacilitator;
-  const otherPlayers = room.players.filter((p) => p.name !== playerName);
+  const seed = (playerName || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const otherPlayers = shuffle(room.players.filter((p) => p.name !== playerName), seed);
 
   return (
     <div className="container">
