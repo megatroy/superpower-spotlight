@@ -53,7 +53,16 @@ export async function POST(req) {
       }
 
       const text = data.content?.[0]?.text || "";
-      const clean = text.replace(/```json|```/g, "").trim();
+      // Escape unescaped control chars inside JSON string values
+      const clean = text
+        .replace(/```json|```/g, "")
+        .trim()
+        .replace(/"(?:[^"\\]|\\.)*"/g, (match) =>
+          match.replace(/[\x00-\x1f]/g, (ch) => {
+            const map = { '\n': '\\n', '\r': '\\r', '\t': '\\t' };
+            return map[ch] || '';
+          })
+        );
       const parsed = JSON.parse(clean);
       parsed.rawPowers = powers;
       synthesis[player.name] = parsed;
