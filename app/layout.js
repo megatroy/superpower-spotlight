@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
           pointerEvents: "none",
           zIndex: 9999,
         }}>
-          v0.1.2
+          v0.2.0
         </div>
       </body>
     </html>

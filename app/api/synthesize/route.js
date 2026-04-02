@@ -11,6 +11,7 @@ export async function POST(req) {
   await updateRoom(code, (r) => { r.phase = "synthesizing"; });
 
   const synthesis = {};
+  const allPlayerNames = room.players.map((p) => p.name);
 
   for (let i = 0; i < room.players.length; i++) {
     if (i > 0) await new Promise((r) => setTimeout(r, 1000));
@@ -40,8 +41,8 @@ export async function POST(req) {
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: buildSynthesisPrompt(player.name, powers) }],
+          max_tokens: 1500,
+          messages: [{ role: "user", content: buildSynthesisPrompt(player.name, powers, allPlayerNames, i) }],
         }),
       });
 
